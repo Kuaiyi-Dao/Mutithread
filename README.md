@@ -8,11 +8,7 @@
 
 ### socket通信
 
-使用了
-
-[freecplus]: http://www.freecplus.net/9ebb8276265b404488a3415be224ed85.html
-
-框架的socke和文件传输部分代码
+使用了[freecplus](http://www.freecplus.net/9ebb8276265b404488a3415be224ed85.html)框架的socke和文件传输部分代码
 
 
 
