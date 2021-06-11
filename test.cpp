@@ -1,18 +1,33 @@
 #include "TcpClass.h"
 #include "Pthread_Pool.h"
+#include "IDList.h"
+#define TIMEOUT 20
 
 void pthMain(void * arg);
+static CetID *clientList = new CetID();
 
 int main(){
 	TcpServer server;
 	if (!server.InitServer(8086)) printf("init failed");
 	ThreadPool *pool = new ThreadPool(3,3);
+
 	while(true){
 		if(server.Accept()==false)
 		{
 			printf("socket create failed!\n"); return -1;
 		}
-		printf("%s已连接\n", server.GetIP());
+		//身份认证
+		if (clientList->IsInWL(server.GetIP()))
+		{
+			printf("%s已连接\n", server.GetIP());
+			clientList->AddIp(server.GetIP(), server.s_connectfd);
+			server.Write("accept");
+		}
+		else{
+			printf("拒绝%s连接\n",server.GetIP());
+			server.Write("refuse");
+			continue;
+		}
 		Task task = {pthMain,(void*)server.s_connectfd,NULL,NULL};
 		pool->TaskAdd(&task);
 	}
@@ -28,8 +43,13 @@ void pthMain(void * arg){
 	{	
 		int lenth;
 		memset(&buffer,0,sizeof(buffer));
-		if (TcpRead(socketfd,buffer,&lenth,300) == false) break;
-		printf("接收到：%s\n", buffer);
+		if (TcpRead(socketfd,buffer,&lenth,TIMEOUT) == false)
+		{
+			clientList->RmIp(socketfd);
+			printf("删除%d\n",socketfd);
+			break;
+		}
+		//文件接收
 		if (memcmp(buffer,"2",1) == 0){
 			memset(&buffer,0,sizeof(buffer));
 			const char*response="OK";
@@ -51,13 +71,15 @@ void pthMain(void * arg){
 			if (RecvFile(socketfd,&recvFile)) printf("已接收文件：%s\n",recvFile.filename);
 			//printf("接收到：%s\n", buffer);
 			//memset(&buffer,0,sizeof(buffer));
-		}else{
-		const char*response="OK";
-		if (TcpWrite(socketfd,response,300) == false) break;
+		}else if (memcmp(buffer,"1",1) == 0){
+			const char*response="OK";
+			if (TcpWrite(socketfd,response,300) == false) break;
+			memset(&buffer,0,sizeof(buffer));
+			if (TcpRead(socketfd,buffer,&lenth,300) == false) break;
+			printf("%d发送：%s\n",socketfd,buffer);
 		}
-		
 	}
-	printf("客户端已断开\n");
+	printf("%d客户端已断开\n",socketfd);
 }
 //todo 
 //	   客户机身份认证 {通过ip地址来实现}

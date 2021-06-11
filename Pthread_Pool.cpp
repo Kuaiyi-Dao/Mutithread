@@ -25,7 +25,7 @@ ThreadPool::ThreadPool(int min,int max){
 	minNum = min;
 	maxNum = max;
 	//quCapacity = quCapacity;
-	taskQue = NULL;
+	this->taskQue = NULL;
 
 	isEmpty = PTHREAD_COND_INITIALIZER;
 	mutexPool = PTHREAD_MUTEX_INITIALIZER;
@@ -40,9 +40,9 @@ ThreadPool::ThreadPool(int min,int max){
 		Arg.worker = Worker;
 		Arg.pool = this;
 		pthread_create(&(Worker->pthreadId),NULL,ThreadPoolMain,(void*)&Arg);
-		//printf("%lld\n",Worker->pthreadId);
 		Addto(worker,Worker);
 	}
+	printf("Thread create success\n");
 } 
 
 static void *ThreadPoolMain(void *arg){
