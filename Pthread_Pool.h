@@ -25,6 +25,8 @@ typedef struct Workers{
 
 static void *ThreadPoolMain(void *arg);
 
+time_t getTime();
+
 class ThreadPool{
 public:
 	int minNum;

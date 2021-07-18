@@ -1,4 +1,5 @@
 #include "Pthread_Pool.h"
+#include <time.h>
 
 template <typename T>
 int Addto(T &Head,T&New){
@@ -11,6 +12,7 @@ int Addto(T &Head,T&New){
 
 template <typename T>
 int Remv(T &List,T&Item){
+	if (Item == NULL || List == NULL) return 0;
 	if (Item->prev != NULL)Item->prev->next = Item->next;
 	if (Item->next != NULL)Item->next->prev = Item->prev;
 	if (List == Item) List = Item->next;
@@ -41,11 +43,14 @@ ThreadPool::ThreadPool(int min,int max){
 		Arg.pool = this;
 		pthread_create(&(Worker->pthreadId),NULL,ThreadPoolMain,(void*)&Arg);
 		Addto(worker,Worker);
+		printf("create thread: %lld\n",Worker->pthreadId);
 	}
+	sleep(1);
 	printf("Thread create success\n");
 } 
 
 static void *ThreadPoolMain(void *arg){
+	time_t t = getTime();
 	args* Args = (args*)arg;
 	ThreadPool * This = Args->pool;
 	workers * OneWorker = Args->worker;
@@ -62,11 +67,17 @@ static void *ThreadPoolMain(void *arg){
 		Task * task = This->taskQue;
 		Remv(This->taskQue,task);
 		pthread_mutex_unlock(&(This->mutexPool));
-		//printf("%lld接受任务\n",OneWorker->pthreadId);
+		printf("%lld接受任务\n%s",OneWorker->pthreadId,asctime(gmtime(&t)));
 		task->func(task->arg);
 	}
 	free(OneWorker);
 	pthread_exit(NULL);
+}
+
+time_t getTime(){
+	time_t timep;
+	time(&timep);
+	return timep;
 }
 
 int ThreadPool::DestroyPool(){
